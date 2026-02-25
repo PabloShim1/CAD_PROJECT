@@ -1,10 +1,2 @@
-# Настройка источника через GPS
-/gps/particle gamma
-/gps/energy 662 keV
-
-# Установка позиции и направления
-/gps/position 0 0 -20 cm
-/gps/direction 0 0 1
-
-# Запуск частиц
-/run/beamOn 1000
+/run/initialize
+/run/beamOn 100

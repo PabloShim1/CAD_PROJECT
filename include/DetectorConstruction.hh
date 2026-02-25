@@ -8,6 +8,8 @@
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"
 #include "G4VPhysicalVolume.hh"
+#include "G4VoxelLimits.hh"
+#include "G4AffineTransform.hh"
 
 namespace tyone
 {
@@ -18,10 +20,28 @@ namespace tyone
     ~DetectorConstruction() override;
     G4VPhysicalVolume *Construct() override;
 
-    // Геттеры
-    inline const G4Box *GetWorldSolid() const noexcept { return world_solid; };
-    inline const G4LogicalVolume *GetWorldLogic() const noexcept { return world_logic; };
-    inline const G4VPhysicalVolume *GetWorldPhys() const noexcept { return world_phys; };
+    // Геттеры для PrimaryGeneratorAction
+    inline G4ThreeVector GetSourceTranslate() const noexcept { return source_translate; };
+
+    // Метод для расчета реальных габаритов (Bounding Box)
+    G4ThreeVector GetGloveFullSizes() const {
+        if (!glove_logic) return G4ThreeVector(0,0,0);
+        G4double xmin, xmax, ymin, ymax, zmin, zmax;
+        glove_logic->GetSolid()->CalculateExtent(kXAxis, G4VoxelLimits(), G4AffineTransform(), xmin, xmax);
+        glove_logic->GetSolid()->CalculateExtent(kYAxis, G4VoxelLimits(), G4AffineTransform(), ymin, ymax);
+        glove_logic->GetSolid()->CalculateExtent(kZAxis, G4VoxelLimits(), G4AffineTransform(), zmin, zmax);
+        return G4ThreeVector(xmax - xmin, ymax - ymin, zmax - zmin);
+    }
+
+    // Метод для расчета геометрического центра модели
+    G4ThreeVector GetGloveCenter() const {
+        if (!glove_logic) return G4ThreeVector(0,0,0);
+        G4double xmin, xmax, ymin, ymax, zmin, zmax;
+        glove_logic->GetSolid()->CalculateExtent(kXAxis, G4VoxelLimits(), G4AffineTransform(), xmin, xmax);
+        glove_logic->GetSolid()->CalculateExtent(kYAxis, G4VoxelLimits(), G4AffineTransform(), ymin, ymax);
+        glove_logic->GetSolid()->CalculateExtent(kZAxis, G4VoxelLimits(), G4AffineTransform(), zmin, zmax);
+        return G4ThreeVector((xmin + xmax)/2.0, (ymin + ymax)/2.0, (zmin + zmax)/2.0);
+    }
 
   private:
     void ConstructMaterials();
@@ -32,23 +52,19 @@ namespace tyone
     void SetUpVisAttributes();
 
   private:
-    // Параметры мира
     G4double margin_x, margin_y, margin_z;
     G4double world_size_x, world_size_y, world_size_z;
     
-    // Мир
     G4Material *world_material = nullptr;
     G4Box *world_solid = nullptr;
     G4LogicalVolume *world_logic = nullptr;
     G4VPhysicalVolume *world_phys = nullptr;
 
-    // Модель (Перчатка)
     G4Material *glove_material = nullptr;
     G4LogicalVolume *glove_logic = nullptr;
     
-    // Вспомогательные переменные
     G4ThreeVector source_translate;
-    G4double source_surface_distance;
+    G4double source_surface_distance; // Вот она!
   };
 }
 #endif
