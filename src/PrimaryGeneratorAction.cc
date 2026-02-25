@@ -14,7 +14,7 @@ namespace tyone
     fParticleGun = new G4ParticleGun(1);
     auto particle = G4ParticleTable::GetParticleTable()->FindParticle("gamma");
     fParticleGun->SetParticleDefinition(particle);
-    fParticleGun->SetParticleMomentumDirection(G4ThreeVector(1.0, 0.0, 0.0));
+    fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0.0, 0.0, 1.0)); // Светим вверх
     fParticleGun->SetParticleEnergy(662.*keV);
   }
 
@@ -24,15 +24,24 @@ namespace tyone
   {
     auto det = static_cast<const DetectorConstruction*>(G4RunManager::GetRunManager()->GetUserDetectorConstruction());
 
-    G4ThreeVector cadSize = det->GetGloveFullSizes();
-    G4ThreeVector cadCenter = det->GetGloveCenter();
+    G4ThreeVector rawSize = det->GetGloveFullSizes();
+    G4double bWidthX, bWidthY;
 
-    // Центрируем пучок относительно реального центра модели
-    G4double randY = cadCenter.y() + (G4UniformRand() - 0.5) * cadSize.y();
-    G4double randZ = cadCenter.z() + (G4UniformRand() - 0.5) * cadSize.z();
-    G4double startX = det->GetSourceTranslate().x();
+    // Адаптация размеров пучка под поворот
+    if (det->IsRotated()) {
+        bWidthX = rawSize.x();
+        bWidthY = rawSize.z(); // Бывшая высота теперь ширина
+    } else {
+        bWidthX = rawSize.x();
+        bWidthY = rawSize.y();
+    }
 
-    fParticleGun->SetParticlePosition(G4ThreeVector(startX, randY, randZ));
+    // Так как модель в (0,0,0), рандомизируем симметрично вокруг нуля
+    G4double randX = (G4UniformRand() - 0.5) * bWidthX;
+    G4double randY = (G4UniformRand() - 0.5) * bWidthY;
+    G4double startZ = -40.0 * cm; // Источник ниже центра модели
+
+    fParticleGun->SetParticlePosition(G4ThreeVector(randX, randY, startZ));
     fParticleGun->GeneratePrimaryVertex(anEvent);
   }
 }

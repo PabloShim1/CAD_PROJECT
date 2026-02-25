@@ -3,13 +3,11 @@
 
 #include "G4VUserDetectorConstruction.hh"
 #include "globals.hh"
-#include "G4Material.hh"
 #include "G4ThreeVector.hh"
-#include "G4Box.hh"
+#include "G4RotationMatrix.hh"
 #include "G4LogicalVolume.hh"
 #include "G4VPhysicalVolume.hh"
-#include "G4VoxelLimits.hh"
-#include "G4AffineTransform.hh"
+#include "G4Box.hh"
 
 namespace tyone
 {
@@ -20,28 +18,12 @@ namespace tyone
     ~DetectorConstruction() override;
     G4VPhysicalVolume *Construct() override;
 
-    // Геттеры для PrimaryGeneratorAction
+    // Геттеры
     inline G4ThreeVector GetSourceTranslate() const noexcept { return source_translate; };
+    inline G4bool IsRotated() const { return fUseRotation; } // НОВЫЙ ГЕТТЕР
 
-    // Метод для расчета реальных габаритов (Bounding Box)
-    G4ThreeVector GetGloveFullSizes() const {
-        if (!glove_logic) return G4ThreeVector(0,0,0);
-        G4double xmin, xmax, ymin, ymax, zmin, zmax;
-        glove_logic->GetSolid()->CalculateExtent(kXAxis, G4VoxelLimits(), G4AffineTransform(), xmin, xmax);
-        glove_logic->GetSolid()->CalculateExtent(kYAxis, G4VoxelLimits(), G4AffineTransform(), ymin, ymax);
-        glove_logic->GetSolid()->CalculateExtent(kZAxis, G4VoxelLimits(), G4AffineTransform(), zmin, zmax);
-        return G4ThreeVector(xmax - xmin, ymax - ymin, zmax - zmin);
-    }
-
-    // Метод для расчета геометрического центра модели
-    G4ThreeVector GetGloveCenter() const {
-        if (!glove_logic) return G4ThreeVector(0,0,0);
-        G4double xmin, xmax, ymin, ymax, zmin, zmax;
-        glove_logic->GetSolid()->CalculateExtent(kXAxis, G4VoxelLimits(), G4AffineTransform(), xmin, xmax);
-        glove_logic->GetSolid()->CalculateExtent(kYAxis, G4VoxelLimits(), G4AffineTransform(), ymin, ymax);
-        glove_logic->GetSolid()->CalculateExtent(kZAxis, G4VoxelLimits(), G4AffineTransform(), zmin, zmax);
-        return G4ThreeVector((xmin + xmax)/2.0, (ymin + ymax)/2.0, (zmin + zmax)/2.0);
-    }
+    G4ThreeVector GetGloveFullSizes() const;
+    G4ThreeVector GetGloveCenter() const;
 
   private:
     void ConstructMaterials();
@@ -64,7 +46,10 @@ namespace tyone
     G4LogicalVolume *glove_logic = nullptr;
     
     G4ThreeVector source_translate;
-    G4double source_surface_distance; // Вот она!
+    G4double source_surface_distance;
+
+    G4bool fUseRotation;
+    G4RotationMatrix* fGloveRotation;
   };
 }
 #endif
