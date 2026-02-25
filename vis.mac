@@ -1,0 +1,18 @@
+# Открываем окно (для Qt на macOS используем OGLSQt)
+/vis/open OGLSQt 600x600-0+0
+
+# Рисуем геометрию (твой синий куб)
+/vis/drawVolume
+
+# ДОБАВЛЯЕМ ОСИ: X-красная, Y-зеленая, Z-синяя (длина 20 см)
+/vis/scene/add/axes 0 0 0 20 cm
+
+# Настраиваем траектории: чтобы они рисовались плавно
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate
+
+# Устанавливаем ракурс (под углом, чтобы видеть 3D)
+/vis/viewer/set/viewpointThetaPhi 45 45
+
+# Автообновление картинки
+/vis/viewer/set/autoRefresh true

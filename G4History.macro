@@ -1,0 +1,16 @@
+/run/verbose 2
+/vis/verbose errors
+/control/execute vis.mac
+/vis/open RayTracer
+/vis/sceneHandler/create RayTracer
+/vis/sceneHandler/attach
+/vis/viewer/create ! ! 600x600-0+0
+/vis/drawVolume
+/vis/scene/create
+/vis/scene/add/volume world -1 -1 none m 0 0 0 0 0 0
+/vis/sceneHandler/attach
+/vis/viewer/set/viewpointThetaPhi 90 180 deg
+/vis/scene/add/trajectories smooth
+/tracking/storeTrajectory 2
+/vis/scene/notifyHandlers
+/vis/scene/endOfEventAction accumulate

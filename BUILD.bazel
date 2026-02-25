@@ -1,0 +1,82 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_import")
+
+# 1. Библиотека TetGen
+cc_library(
+    name = "tetgen",
+    srcs = glob(["third_party/TetGen-main/**/*.cxx", "third_party/TetGen-main/**/*.cc"], allow_empty = True),
+    hdrs = glob(["third_party/TetGen-main/**/*.h"], allow_empty = True),
+    includes = ["third_party/TetGen-main"],
+)
+
+# 2. Импортируем Assimp
+cc_import(
+    name = "assimp_lib",
+    shared_library = "third_party/geant4/lib/libassimp.6.dylib",
+)
+
+cc_library(
+    name = "assimp",
+    hdrs = glob(["third_party/assimp-master/include/**/*.h", "third_party/assimp-master/include/**/*.hpp"], allow_empty = True),
+    includes = ["third_party/assimp-master/include"],
+    deps = [":assimp_lib"],
+)
+
+# 3. Библиотека CADMesh
+cc_library(
+    name = "cadmesh",
+    srcs = glob([
+        "third_party/CADMesh-master/src/*.cc",
+        "third_party/CADMesh-master/src/*.cpp",
+    ], exclude = ["third_party/CADMesh-master/src/CADMeshTemplate.cc"], allow_empty = True),
+    hdrs = glob([
+        "third_party/CADMesh-master/include/*.hh",
+        "third_party/CADMesh-master/include/*.h",
+        "third_party/CADMesh-master/src/CADMeshTemplate.cc",
+    ], allow_empty = True),
+    includes = [
+        "third_party/CADMesh-master/include",
+        "third_party/CADMesh-master/src",
+    ],
+    deps = [":tetgen", ":assimp", ":geant4"], 
+)
+
+# 4. Geant4
+cc_library(
+    name = "geant4",
+    hdrs = glob(["third_party/geant4/**"], exclude = ["third_party/geant4/lib/**"]),
+    includes = ["third_party/geant4", "third_party/geant4/CLHEP"],
+    srcs = glob(["third_party/geant4/lib/*.dylib"]),
+    visibility = ["//visibility:public"],
+)
+# 5. Исполняемый файл
+cc_binary(
+    name = "cadgeant4",
+    srcs = glob(["src/*.cc", "include/*.hh"]),
+    includes = ["include"],
+    # Собираем все ресурсы в один список
+    data = glob([
+        "*.mac",        # Твои макросы: init_vis, vis, run
+        "*.obj",        # Перчатка и любые другие модели
+        "*.stl",        # На будущее
+    ], allow_empty = True) + glob([
+        "third_party/geant4/lib/*.dylib", # Динамические библиотеки
+    ], allow_empty = True),
+    deps = [
+        ":cadmesh",
+        ":geant4",
+    ],
+    linkopts = [
+        "-L/Users/pavelsimko/Documents/CAD_PROJECT/third_party/geant4/lib",
+        "-Wl,-rpath,/Users/pavelsimko/Documents/CAD_PROJECT/third_party/geant4/lib",
+        "-Wl,-force_load,/Users/pavelsimko/Documents/CAD_PROJECT/third_party/geant4/lib/libG4OpenGL.dylib",
+        "-lG4vis_management",
+        "-lG4interfaces",
+        "-lG4graphics_reps",
+        "-lG4intercoms",
+        "-lG4geometry",
+        "-lG4materials",
+        "-lG4run",
+        "-framework OpenGL",
+        "-framework Cocoa",
+    ],
+)
