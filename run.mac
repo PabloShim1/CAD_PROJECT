@@ -7,4 +7,4 @@
 /gps/direction 0 0 1
 
 # Запуск частиц
-/run/beamOn 10
+/run/beamOn 1000
