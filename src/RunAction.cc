@@ -30,6 +30,9 @@ namespace tyone
 
   void RunAction::BeginOfRunAction(const G4Run *)
   {
+    // optional: clear all the old data
+    // open file with specific name
+    // create Hist3D
   }
 
   void RunAction::EndOfRunAction(const G4Run *run)

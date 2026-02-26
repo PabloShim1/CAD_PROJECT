@@ -12,6 +12,9 @@ namespace tyone
 
   SteppingAction::SteppingAction()
   {
+    // get general detector construction
+    // static_cast<const DetecorConstruction*>(general detector construction);
+    // sensitive_volume = detector->GetSensitiveVolume();
   }
 
   SteppingAction::~SteppingAction()
@@ -20,5 +23,7 @@ namespace tyone
 
   void SteppingAction::UserSteppingAction(const G4Step *step)
   {
+    // if (volume != sensitive_volume) return;
+    // Fill hist 3D.
   }
 }

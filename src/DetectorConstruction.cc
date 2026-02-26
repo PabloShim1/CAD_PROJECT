@@ -15,7 +15,7 @@ namespace tyone
         this->margin_x = 100 * cm;
         this->margin_y = 100 * cm;
         this->margin_z = 100 * cm; 
-        this->fUseRotation = false; // Оставляем true для твоей модели
+        this->fUseRotation = true; // Оставляем true для твоей модели
     }
 
     DetectorConstruction::~DetectorConstruction() { delete fGloveRotation; }

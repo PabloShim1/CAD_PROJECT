@@ -18,6 +18,8 @@ namespace tyone
     ~SteppingAction() override;
 
     void UserSteppingAction(const G4Step *) override;
+  private:
+   // sensitive volume
   };
 
 }

@@ -25,6 +25,8 @@ namespace tyone
     G4ThreeVector GetGloveFullSizes() const;
     G4ThreeVector GetGloveCenter() const;
 
+    // const G4LogicalVolume* GetSensitiveVolume() const { return this->sensitive_volume; };
+
   private:
     void ConstructMaterials();
     void ComputeTranslations();
@@ -50,6 +52,8 @@ namespace tyone
 
     G4bool fUseRotation;
     G4RotationMatrix* fGloveRotation;
+
+    // G4LogicalVolume* sensitive_volume;
   };
 }
 #endif
