@@ -24,7 +24,7 @@ namespace tyone
 
     G4ThreeVector GetGloveFullSizes() const;
     G4ThreeVector GetGloveCenter() const;
-
+    G4LogicalVolume* GetGloveLogic() const { return glove_logic; }
     // const G4LogicalVolume* GetSensitiveVolume() const { return this->sensitive_volume; };
 
   private:

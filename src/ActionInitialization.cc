@@ -17,21 +17,22 @@ namespace tyone
 
   void ActionInitialization::BuildForMaster() const
   {
-    RunAction *runAction = new RunAction;
-    SetUserAction(runAction);
+    // В многопоточном режиме Master следит за RunAction
+    SetUserAction(new RunAction);
   }
 
   void ActionInitialization::Build() const
   {
+    // 1. Генерация частиц
     SetUserAction(new PrimaryGeneratorAction);
 
+    // 2. Управление файлами и гистограммами (ROOT)
     RunAction *runAction = new RunAction;
     SetUserAction(runAction);
 
-    // EventAction *eventAction = new EventAction(runAction);
-    // SetUserAction(eventAction);
-
-    // SetUserAction(new SteppingAction);
+    // 3. Обработка каждого шага частицы (ЗАПИСЬ ДОЗЫ)
+    // Теперь это активно!
+    SetUserAction(new SteppingAction);
   }
 
 }
