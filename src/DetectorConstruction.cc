@@ -1,4 +1,5 @@
 #include "DetectorConstruction.hh"
+#include "GlobalConfig.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
 #include "G4SystemOfUnits.hh"
@@ -6,6 +7,13 @@
 #include "CADMesh.hh"
 #include "G4VoxelLimits.hh"
 #include "G4AffineTransform.hh"
+#include "G4Box.hh"
+#include "G4LogicalVolume.hh"
+// ИНКЛЮЗЫ ДЛЯ ДЕТЕКТОРА (Проверь их наличие!)
+#include "G4SDManager.hh"
+#include "G4MultiFunctionalDetector.hh"
+#include "G4VPrimitiveScorer.hh"
+#include "G4PSEnergyDeposit.hh"
 
 namespace tyone
 {
@@ -15,7 +23,7 @@ namespace tyone
         this->margin_x = 100 * cm;
         this->margin_y = 100 * cm;
         this->margin_z = 100 * cm; 
-        this->fUseRotation = false; // Оставляем true для твоей модели
+        this->fUseRotation = true; 
     }
 
     DetectorConstruction::~DetectorConstruction() { delete fGloveRotation; }
@@ -27,37 +35,20 @@ namespace tyone
         this->glove_material = nist->FindOrBuildMaterial("G4_POLYETHYLENE");
     }
 
-    void DetectorConstruction::ComputeTranslations()
-    {
-        this->world_size_x = this->margin_x;
-        this->world_size_y = this->margin_y;
-        this->world_size_z = this->margin_z;
-        this->source_translate = G4ThreeVector(0, 0, -40 * cm);
-    }
-
-    void DetectorConstruction::ConstructSolids()
-    {
-        this->world_solid = new G4Box("World_Solid", this->world_size_x/2., this->world_size_y/2., this->world_size_z/2.);
-    }
-
     void DetectorConstruction::ConstructLogicals()
     {
+        this->world_solid = new G4Box("World_Solid", margin_x/2., margin_y/2., margin_z/2.);
         this->world_logic = new G4LogicalVolume(this->world_solid, this->world_material, "World_Logic");
 
         auto mesh = CADMesh::TessellatedMesh::FromOBJ("glove1.obj");
         mesh->SetScale(10.0); 
         
-        // --- РЕШЕНИЕ ПРОБЛЕМЫ СМЕЩЕНИЯ ---
-        // Сначала считаем центр "сырого" меша
         G4VSolid* tempSolid = mesh->GetSolid();
         G4double xmin, xmax, ymin, ymax, zmin, zmax;
         tempSolid->CalculateExtent(kXAxis, G4VoxelLimits(), G4AffineTransform(), xmin, xmax);
         tempSolid->CalculateExtent(kYAxis, G4VoxelLimits(), G4AffineTransform(), ymin, ymax);
         tempSolid->CalculateExtent(kZAxis, G4VoxelLimits(), G4AffineTransform(), zmin, zmax);
-        G4ThreeVector center((xmin+xmax)/2., (ymin+ymax)/2., (zmin+zmax)/2.);
-        
-        // Сдвигаем меш так, чтобы его собственный центр стал точкой (0,0,0)
-        mesh->SetOffset(-center); 
+        mesh->SetOffset(-G4ThreeVector((xmin+xmax)/2., (ymin+ymax)/2., (zmin+zmax)/2.)); 
 
         this->glove_logic = new G4LogicalVolume(mesh->GetSolid(), this->glove_material, "Glove_Logic");
 
@@ -75,25 +66,30 @@ namespace tyone
             fGloveRotation->rotateX(90 * deg);
         }
 
-        // Теперь модель ВСЕГДА центрирована в (0,0,0) своего объема.
-        // Размещаем её в нуле Мира. Вращение произойдет вокруг центра модели.
-        new G4PVPlacement(fGloveRotation, 
-                          G4ThreeVector(0, 0, 0), 
-                          this->glove_logic, 
-                          "Glove_Phys", 
-                          this->world_logic, 
-                          false, 
-                          0, 
-                          true);
+        new G4PVPlacement(fGloveRotation, G4ThreeVector(0, 0, 0), this->glove_logic, "Glove_Phys", this->world_logic, false, 0, true);
     }
 
-    void DetectorConstruction::SetUpVisAttributes()
-    {
-        G4VisAttributes *world_vis = new G4VisAttributes(false);
-        this->world_logic->SetVisAttributes(world_vis);
-    }
+    // РЕАЛИЗАЦИЯ МЕТОДА
+    void DetectorConstruction::ConstructSDandField()
+{
+    if (SCORING_METHOD == 1) {
+        G4SDManager* sdManager = G4SDManager::GetSDMpointer();
+        
+        // 1. Создаем детектор
+        G4MultiFunctionalDetector* det = new G4MultiFunctionalDetector("GloveDetector");
+        sdManager->AddNewDetector(det);
 
-    // Эти методы теперь возвращают размеры уже центрированного объекта
+        // 2. Создаем скорер
+        G4VPrimitiveScorer* primitive = new G4PSEnergyDeposit("Edep");
+        det->RegisterPrimitive(primitive);
+
+        // 3. ПРЯМОЕ НАЗНАЧЕНИЕ (вместо SetSensitiveDetector)
+        if (this->glove_logic) {
+            this->glove_logic->SetSensitiveDetector(det);
+        }
+    }
+}
+
     G4ThreeVector DetectorConstruction::GetGloveFullSizes() const {
         if (!glove_logic) return G4ThreeVector(0,0,0);
         G4double xmin, xmax, ymin, ymax, zmin, zmax;
@@ -103,14 +99,11 @@ namespace tyone
         return G4ThreeVector(xmax - xmin, ymax - ymin, zmax - zmin);
     }
 
-    G4ThreeVector DetectorConstruction::GetGloveCenter() const {
-        return G4ThreeVector(0,0,0); // Модель теперь всегда в нуле
-    }
-
     G4VPhysicalVolume *DetectorConstruction::Construct()
     {
-        ConstructMaterials(); ComputeTranslations(); ConstructSolids();
-        ConstructLogicals(); ConstructPhysicals(); SetUpVisAttributes();
+        ConstructMaterials();
+        ConstructLogicals();
+        ConstructPhysicals();
         return this->world_phys;
     }
 }

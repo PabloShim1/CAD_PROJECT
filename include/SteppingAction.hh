@@ -4,22 +4,16 @@
 #include "G4UserSteppingAction.hh"
 #include "globals.hh"
 
-class G4LogicalVolume;
-
 namespace tyone
 {
-
-  class EventAction;
-
   class SteppingAction : public G4UserSteppingAction
   {
   public:
     SteppingAction();
-    ~SteppingAction() override;
+    ~SteppingAction() override = default;
 
-    void UserSteppingAction(const G4Step *) override;
+    void UserSteppingAction(const G4Step*) override;
   };
-
 }
 
 #endif

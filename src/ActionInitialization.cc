@@ -1,37 +1,28 @@
 #include "ActionInitialization.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
-#include "EventAction.hh"
 #include "SteppingAction.hh"
 
 namespace tyone
 {
-
-  ActionInitialization::ActionInitialization()
-  {
-  }
-
-  ActionInitialization::~ActionInitialization()
-  {
-  }
+  ActionInitialization::ActionInitialization() : G4VUserActionInitialization() {}
+  ActionInitialization::~ActionInitialization() {}
 
   void ActionInitialization::BuildForMaster() const
   {
-    RunAction *runAction = new RunAction;
-    SetUserAction(runAction);
+    // RunAction нужен мастеру для управления файлом в многопоточном режиме
+    SetUserAction(new RunAction());
   }
 
   void ActionInitialization::Build() const
   {
-    SetUserAction(new PrimaryGeneratorAction);
+    // Регистрация генератора частиц
+    SetUserAction(new PrimaryGeneratorAction());
 
-    RunAction *runAction = new RunAction;
-    SetUserAction(runAction);
+    // Регистрация управления файлом (открытие/запись)
+    SetUserAction(new RunAction());
 
-    // EventAction *eventAction = new EventAction(runAction);
-    // SetUserAction(eventAction);
-
-    // SetUserAction(new SteppingAction);
+    // Регистрация сбора данных на каждом шаге
+    SetUserAction(new SteppingAction());
   }
-
 }
